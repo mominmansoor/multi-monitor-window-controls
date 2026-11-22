@@ -49,7 +49,7 @@ of another shortcut or to type a capital letter, or holding it, doesn't count as
   settings. Pressing a direction with no monitor on that side does nothing.
 - The desktop and taskbar are ignored.
 
-Based on the "Move Window to Monitor" mod by TomberWolf.
+Based on the "Move Window to Monitor" mod by TomberWolf. Credits to sultansaad-dev as well.
 
 Note: this mod uses a low-level keyboard hook so it can tell Right Ctrl from
 Left Ctrl. It only reacts to the shortcuts above; while their modifier keys are held,

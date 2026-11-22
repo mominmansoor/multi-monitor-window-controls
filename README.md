@@ -31,4 +31,4 @@ The window stays focused after it moves, so you can keep tapping the shortcut to
 
 ## Credit
 
-Started from the Move Window to Monitor mod by TomberWolf and rebuilt around Right Ctrl, the active window, and moving everything at once. Released under the MIT license.
+Started from the Move Window to Monitor mod by TomberWolf and rebuilt around Right Ctrl, the active window, and moving everything at once. Credits to [sultansaad-dev](https://github.com/sultansaad-dev) as well. Released under the MIT license.
