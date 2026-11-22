@@ -6,6 +6,9 @@ A Windhawk mod I made because I run one normal monitor and one vertical one, and
 
 * **Right Ctrl + Left or Right Arrow** sends the window you're working in to the monitor on that side.
 * **Right Ctrl + Right Shift + Left or Right Arrow** sends every window on your current monitor over to the next one.
+* **Right Shift + Down Arrow** minimizes the top window so the one under it shows. Press it again to minimize the next one.
+* **Right Shift + Up Arrow** brings minimized windows back one per press, the most recent first, each on top of the last.
+* **Double tap Right Shift** moves keyboard focus to the other monitor, so you don't have to click over.
 
 Maximized windows stay maximized on the new monitor. Everything else keeps its size, gets centered, and shrinks to fit if the new screen is smaller (which matters a lot when you hop onto a vertical monitor).
 
@@ -22,9 +25,9 @@ The window stays focused after it moves, so you can keep tapping the shortcut to
 
 * Monitors are ordered left to right the way they are in Windows display settings. If nothing sits on the side you pressed, nothing happens.
 * Windows blocks normal programs from controlling windows that run as administrator, so those won't move. Win + Shift + Arrow still works on them.
-* To tell Right Ctrl apart from Left Ctrl, the mod uses a low level keyboard hook. It only reacts to the shortcuts above, but while Right Ctrl is held, Left and Right Arrow don't reach other apps. The whole hook is one section of the code if you want to read it.
+* To tell Right Ctrl apart from Left Ctrl, the mod uses a low level keyboard hook. It only reacts to the shortcuts above, but while Right Ctrl is held, Left and Right Arrow don't reach other apps, and while Right Shift is held, Up and Down don't either. The whole hook is one section of the code if you want to read it.
 * When moving all windows, it skips minimized ones, windows on other virtual desktops, tool windows, the desktop and the taskbar.
-* If a key press does nothing, open the mod's Log tab in Windhawk. It prints what it did for each press.
+* If a key press does nothing, turn on debug logging in the mod's Advanced tab and check the log. It prints what it did for each press.
 
 ## Credit
 

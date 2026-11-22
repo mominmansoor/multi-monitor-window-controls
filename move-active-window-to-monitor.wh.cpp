@@ -1,8 +1,8 @@
 // ==WindhawkMod==
 // @id              move-active-window-to-monitor
 // @name            Move Active Window to Monitor
-// @description     Right Ctrl + Left/Right Arrow sends the active window to the monitor on that side. Right Ctrl + Right Shift + Left/Right sends ALL windows on the active monitor. Maximized windows stay maximized; others keep their size (shrunk to fit).
-// @version         1.2.0
+// @description     Keyboard shortcuts to move windows between monitors, switch focus between monitors (double tap Right Shift), and minimize the other windows on a monitor.
+// @version         1.6.0
 // @author          Momin
 // @github          https://github.com/mominmansoor
 // @include         windhawk.exe
@@ -24,6 +24,22 @@ the one under the mouse if nothing is focused) to the neighbouring monitor.
 Minimized windows, windows on other virtual desktops, tool windows, the desktop
 and the taskbar are left alone.
 
+Hold **Right Shift** and press **Down Arrow** to minimize the top window on the
+active monitor, so the one under it shows. Press again to minimize the next one.
+Press **Right Shift + Up Arrow** to bring them back one at a time, the most
+recently minimized first, each one on top of the last. While Right Shift is held, Up and Down
+Arrow are not passed on to other apps, so Right Shift + arrows won't select
+text (Left Shift still does).
+
+Hold **Right Ctrl + Right Shift** and press **Up** or **Down Arrow** to move
+keyboard focus to the next or previous monitor (in left to right order,
+wrapping around, so with two monitors either key jumps to the other one). The
+top window on that monitor gets focus. Monitors with no windows are skipped.
+
+You can also **double tap Right Shift** (tap and release it twice, quickly, with no
+other key in between) to jump focus to the next monitor. Using Right Shift as part
+of another shortcut or to type a capital letter, or holding it, doesn't count as a tap.
+
 - Maximized (or borderless fullscreen) windows stay maximized/fullscreen on the
   new monitor.
 - Other windows keep their size (scaled for the monitor's DPI) and are centered
@@ -36,8 +52,8 @@ and the taskbar are left alone.
 Based on the "Move Window to Monitor" mod by TomberWolf.
 
 Note: this mod uses a low-level keyboard hook so it can tell Right Ctrl from
-Left Ctrl. It only reacts to Right Ctrl + Left/Right Arrow; while Right Ctrl is
-held, those two arrow keys are not passed on to other programs.
+Left Ctrl. It only reacts to the shortcuts above; while their modifier keys are held,
+the matching arrow keys are not passed on to other programs.
 */
 // ==/WindhawkModReadme==
 
@@ -54,6 +70,9 @@ held, those two arrow keys are not passed on to other programs.
 // wParam: -1 = move left, +1 = move right
 #define WM_APP_MOVE_WINDOW (WM_APP + 1)
 #define WM_APP_MOVE_ALL    (WM_APP + 2)
+#define WM_APP_MINIMIZE_OTHERS   (WM_APP + 3)
+#define WM_APP_RESTORE_MINIMIZED (WM_APP + 4)
+#define WM_APP_FOCUS_MONITOR     (WM_APP + 5)
 
 struct MonitorInfo {
     HMONITOR hMon;
@@ -67,6 +86,14 @@ static DWORD             g_threadId = 0;
 static HWND              g_hMsgWnd  = nullptr;
 static HHOOK             g_hHook    = nullptr;
 static DWORD             g_swallowedKey = 0;
+
+// Double tap Right Shift detection (only touched from the keyboard hook).
+static bool  g_rshiftDown      = false;
+static bool  g_rshiftDirty     = false;  // another key was pressed during the tap
+static DWORD g_rshiftPressTick = 0;
+static DWORD g_lastTapTick    = 0;
+static const DWORD kTapMaxHoldMs = 250;  // longest press that still counts as a tap
+static const DWORD kDoubleTapMs  = 400;  // max time between the two taps
 static std::atomic<bool> g_running{false};
 
 // ── monitors ──────────────────────────────────────────────────────────────────
@@ -330,6 +357,129 @@ static void MoveAllWindows(int direction /* -1 left, +1 right */) {
     }
 }
 
+// ── minimize the top window one press at a time, and bring them back ──────────────
+
+// Windows minimized by focus mode, in top-to-bottom stacking order.
+// Only touched from the message window's thread.
+static std::vector<HWND> g_minimizedByFocus;
+
+static void ActivateWindow(HWND hwnd);
+
+// Minimizes the top window only, so the one underneath shows through.
+// Press again to minimize the next one. Windows are remembered in a stack.
+static void MinimizeTopWindow() {
+    HWND active = GetActiveTopLevelWindow();
+    if (!active) {
+        Wh_Log(L"No active window to minimize");
+        return;
+    }
+
+    EnumContext ctx;
+    ctx.src = MonitorFromWindow(active, MONITOR_DEFAULTTONEAREST);
+    EnumWindows(EnumWindowsCollectProc, reinterpret_cast<LPARAM>(&ctx));
+
+    // Next window down in the stack on this monitor (EnumWindows is top to bottom).
+    HWND next = nullptr;
+    for (HWND hwnd : ctx.windows) {
+        if (hwnd != active) { next = hwnd; break; }
+    }
+
+    wchar_t title[80] = {};
+    GetWindowTextW(active, title, ARRAYSIZE(title));
+    ShowWindow(active, SW_MINIMIZE);
+    if (IsIconic(active)) {
+        g_minimizedByFocus.push_back(active);
+        Wh_Log(L"Minimized \"%s\"", title);
+        if (next) ActivateWindow(next);
+    } else {
+        Wh_Log(L"Could not minimize \"%s\" (elevated?)", title);
+    }
+}
+
+// One window per press. The list is in top-to-bottom stacking order, so taking
+// from the end brings windows back bottom to top, each landing on top of the
+// previous one (the window that was on top ends up on top again).
+static void RestoreNextMinimizedWindow() {
+    while (!g_minimizedByFocus.empty()) {
+        HWND hwnd = g_minimizedByFocus.back();
+        g_minimizedByFocus.pop_back();
+
+        // Skip windows that were closed or restored by hand in the meantime.
+        if (!IsWindow(hwnd) || !IsIconic(hwnd)) continue;
+
+        ShowWindow(hwnd, SW_RESTORE);
+        SetWindowPos(hwnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+        ActivateWindow(hwnd);
+        Wh_Log(L"Restored a window (%d left to restore)",
+               (int)g_minimizedByFocus.size());
+        return;
+    }
+    Wh_Log(L"Nothing to restore");
+}
+
+// ── switch focus to another monitor ──────────────────────────────────────────
+
+static void ActivateWindow(HWND hwnd) {
+    // Windows only lets the process that last received input take focus. A
+    // synthetic tap of an unused key (F24) counts as input from this process.
+    INPUT in[2] = {};
+    in[0].type       = INPUT_KEYBOARD;
+    in[0].ki.wVk     = VK_F24;
+    in[1].type       = INPUT_KEYBOARD;
+    in[1].ki.wVk     = VK_F24;
+    in[1].ki.dwFlags = KEYEVENTF_KEYUP;
+    SendInput(2, in, sizeof(INPUT));
+
+    SetForegroundWindow(hwnd);
+
+    if (GetForegroundWindow() != hwnd) {
+        // Fallback: temporarily share input state with the current foreground
+        // window's thread.
+        HWND fg = GetForegroundWindow();
+        DWORD fgThread = fg ? GetWindowThreadProcessId(fg, nullptr) : 0;
+        DWORD myThread = GetCurrentThreadId();
+        if (fgThread && fgThread != myThread &&
+            AttachThreadInput(myThread, fgThread, TRUE)) {
+            BringWindowToTop(hwnd);
+            SetForegroundWindow(hwnd);
+            AttachThreadInput(myThread, fgThread, FALSE);
+        }
+    }
+}
+
+static void FocusAdjacentMonitor(int direction /* +1 next, -1 previous */) {
+    auto monitors = GetAllMonitors();
+    const int n = (int)monitors.size();
+    if (n < 2) return;
+
+    HMONITOR hCur = nullptr;
+    if (HWND active = GetActiveTopLevelWindow()) {
+        hCur = MonitorFromWindow(active, MONITOR_DEFAULTTONEAREST);
+    } else {
+        POINT pt;
+        if (GetCursorPos(&pt))
+            hCur = MonitorFromPoint(pt, MONITOR_DEFAULTTONEAREST);
+    }
+    int curIdx = FindMonitorIndex(monitors, hCur);
+    if (curIdx < 0) return;
+
+    // Go around the monitors until one has a window to focus.
+    for (int step = 1; step < n; step++) {
+        int idx = ((curIdx + direction * step) % n + n) % n;
+
+        EnumContext ctx;
+        ctx.src = monitors[idx].hMon;
+        EnumWindows(EnumWindowsCollectProc, reinterpret_cast<LPARAM>(&ctx));
+        if (ctx.windows.empty()) continue;
+
+        // EnumWindows lists top to bottom, so the first one is the top window.
+        Wh_Log(L"Focusing monitor %d", idx);
+        ActivateWindow(ctx.windows.front());
+        return;
+    }
+    Wh_Log(L"No other monitor has a window to focus");
+}
+
 // ── keyboard hook ─────────────────────────────────────────────────────────────
 
 static bool KeyDown(int vk) {
@@ -341,8 +491,46 @@ static LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam,
     if (nCode == HC_ACTION) {
         const auto* kb = reinterpret_cast<const KBDLLHOOKSTRUCT*>(lParam);
 
+        // Double tap Right Shift -> switch monitor focus.
+        if (!(kb->flags & LLKHF_INJECTED)) {
+            const bool evDown = wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN;
+            const bool evUp   = wParam == WM_KEYUP || wParam == WM_SYSKEYUP;
+
+            if (kb->vkCode == VK_RSHIFT) {
+                if (evDown) {
+                    if (!g_rshiftDown) {  // ignore auto-repeat
+                        g_rshiftDown      = true;
+                        g_rshiftDirty     = false;
+                        g_rshiftPressTick = GetTickCount();
+                    }
+                } else if (evUp) {
+                    g_rshiftDown = false;
+                    const DWORD now = GetTickCount();
+                    const bool cleanTap =
+                        !g_rshiftDirty && (now - g_rshiftPressTick) <= kTapMaxHoldMs;
+                    if (cleanTap) {
+                        if (g_lastTapTick && (now - g_lastTapTick) <= kDoubleTapMs) {
+                            g_lastTapTick = 0;
+                            if (g_hMsgWnd)
+                                PostMessage(g_hMsgWnd, WM_APP_FOCUS_MONITOR,
+                                            (WPARAM)1, 0);
+                        } else {
+                            g_lastTapTick = now;
+                        }
+                    } else {
+                        g_lastTapTick = 0;
+                    }
+                }
+            } else if (evDown) {
+                // Any other key cancels a tap in progress or a pending first tap.
+                if (g_rshiftDown) g_rshiftDirty = true;
+                g_lastTapTick = 0;
+            }
+        }
+
         if (!(kb->flags & LLKHF_INJECTED) &&
-            (kb->vkCode == VK_LEFT || kb->vkCode == VK_RIGHT)) {
+            (kb->vkCode == VK_LEFT || kb->vkCode == VK_RIGHT ||
+             kb->vkCode == VK_UP || kb->vkCode == VK_DOWN)) {
             const bool isDown =
                 wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN;
             const bool isUp = wParam == WM_KEYUP || wParam == WM_SYSKEYUP;
@@ -355,12 +543,27 @@ static LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam,
                     !KeyDown(VK_RWIN);
                 // Right Ctrl           -> move the active window
                 // Right Ctrl + R.Shift -> move all windows on the monitor
+                // Right Shift alone + Down -> minimize the top window
+                // Right Shift alone + Up   -> bring one back
+                const bool horizontal =
+                    kb->vkCode == VK_LEFT || kb->vkCode == VK_RIGHT;
+                const bool rshiftOnly =
+                    KeyDown(VK_RSHIFT) && !KeyDown(VK_LSHIFT) &&
+                    !KeyDown(VK_CONTROL) && !KeyDown(VK_MENU) &&
+                    !KeyDown(VK_LWIN) && !KeyDown(VK_RWIN);
                 UINT msgId = 0;
-                if (baseMods && !KeyDown(VK_SHIFT)) {
+                if (horizontal && baseMods && !KeyDown(VK_SHIFT)) {
                     msgId = WM_APP_MOVE_WINDOW;
-                } else if (baseMods && KeyDown(VK_RSHIFT) &&
+                } else if (horizontal && baseMods && KeyDown(VK_RSHIFT) &&
                            !KeyDown(VK_LSHIFT)) {
                     msgId = WM_APP_MOVE_ALL;
+                } else if (!horizontal && rshiftOnly) {
+                    msgId = kb->vkCode == VK_DOWN ? WM_APP_MINIMIZE_OTHERS
+                                                  : WM_APP_RESTORE_MINIMIZED;
+                } else if (!horizontal && baseMods && KeyDown(VK_RSHIFT) &&
+                           !KeyDown(VK_LSHIFT)) {
+                    // Right Ctrl + Right Shift + Up/Down -> switch monitor focus
+                    msgId = WM_APP_FOCUS_MONITOR;
                 }
 
                 if (msgId) {
@@ -369,8 +572,10 @@ static LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam,
                         g_swallowedKey = kb->vkCode;
                         if (g_hMsgWnd) {
                             PostMessage(g_hMsgWnd, msgId,
-                                        kb->vkCode == VK_LEFT ? (WPARAM)-1
-                                                              : (WPARAM)1,
+                                        (kb->vkCode == VK_LEFT ||
+                                         kb->vkCode == VK_DOWN)
+                                            ? (WPARAM)-1
+                                            : (WPARAM)1,
                                         0);
                         }
                     }
@@ -396,6 +601,20 @@ static LRESULT CALLBACK MsgWndProc(HWND hwnd, UINT msg, WPARAM wParam,
     }
     if (msg == WM_APP_MOVE_ALL) {
         MoveAllWindows((int)(intptr_t)wParam);
+        return 0;
+    }
+    if (msg == WM_APP_MINIMIZE_OTHERS) {
+        Wh_Log(L"Minimize shortcut received");
+        MinimizeTopWindow();
+        return 0;
+    }
+    if (msg == WM_APP_FOCUS_MONITOR) {
+        FocusAdjacentMonitor((int)(intptr_t)wParam);
+        return 0;
+    }
+    if (msg == WM_APP_RESTORE_MINIMIZED) {
+        Wh_Log(L"Restore shortcut received");
+        RestoreNextMinimizedWindow();
         return 0;
     }
     return DefWindowProc(hwnd, msg, wParam, lParam);
