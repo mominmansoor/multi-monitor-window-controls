@@ -14,6 +14,12 @@ Maximized windows stay maximized on the new monitor. Everything else keeps its s
 
 The window stays focused after it moves, so you can keep tapping the shortcut to bounce it back and forth.
 
+## How it differs from similar mods
+
+* **Move Window to Monitor** (TomberWolf) and **Move and Gather Windows** (fjdiazt) are already in the Windhawk catalog and cover moving a window or gathering windows with configurable hotkeys. This mod is not a replacement for them.
+* This one is for people who want everything on Right Ctrl chords: move the active window, move every window on the current monitor, minimize and restore the top window one at a time, and jump keyboard focus to the other monitor (with a short outline flash so you can see where it went).
+* Using Right Ctrl on its own is what needs the low level keyboard hook, which is why it is a separate mod and not a setting in theirs. If you only need to move a window, one of those two is the simpler pick.
+
 ## Install
 
 1. Install [Windhawk](https://windhawk.net/).

@@ -2,7 +2,7 @@
 // @id              move-active-window-to-monitor
 // @name            Move Active Window to Monitor
 // @description     Keyboard shortcuts to move windows between monitors, switch focus between monitors (double tap Right Shift), and minimize the other windows on a monitor.
-// @version         1.11.1
+// @version         1.11.2
 // @author          Momin
 // @github          https://github.com/mominmansoor
 // @include         windhawk.exe
@@ -750,6 +750,11 @@ static LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam,
                         }
                     }
                     return 1;  // swallow
+                }
+                // This key-down is passed on (e.g. Right Ctrl was released
+                // while the arrow auto-repeats), so pass on its key-up too.
+                if (g_swallowedKey == kb->vkCode) {
+                    g_swallowedKey = 0;
                 }
             } else if (isUp && g_swallowedKey == kb->vkCode) {
                 g_swallowedKey = 0;
