@@ -3,7 +3,7 @@
 // @name            Move Active Window to Monitor
 // @description     Right Ctrl + Left/Right Arrow sends the active window to the monitor on that side. Right Ctrl + Right Shift + Left/Right sends ALL windows on the active monitor. Maximized windows stay maximized; others keep their size (shrunk to fit).
 // @version         1.2.0
-// @author          Momin (based on "Move Window to Monitor" by TomberWolf)
+// @author          Momin
 // @github          https://github.com/mominmansoor
 // @include         windhawk.exe
 // @compilerOptions -luser32 -lgdi32 -lshcore
@@ -32,6 +32,8 @@ and the taskbar are left alone.
 - Monitors are ordered left to right by their position in Windows' display
   settings. Pressing a direction with no monitor on that side does nothing.
 - The desktop and taskbar are ignored.
+
+Based on the "Move Window to Monitor" mod by TomberWolf.
 
 Note: this mod uses a low-level keyboard hook so it can tell Right Ctrl from
 Left Ctrl. It only reacts to Right Ctrl + Left/Right Arrow; while Right Ctrl is
