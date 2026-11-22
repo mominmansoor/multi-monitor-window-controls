@@ -2,7 +2,7 @@
 // @id              move-active-window-to-monitor
 // @name            Move Active Window to Monitor
 // @description     Keyboard shortcuts to move windows between monitors, switch focus between monitors (double tap Right Shift), and minimize the other windows on a monitor.
-// @version         1.10.0
+// @version         1.11.1
 // @author          Momin
 // @github          https://github.com/mominmansoor
 // @include         windhawk.exe
@@ -24,12 +24,10 @@ the one under the mouse if nothing is focused) to the neighbouring monitor.
 Minimized windows, windows on other virtual desktops, tool windows, the desktop
 and the taskbar are left alone.
 
-Hold **Right Shift** and press **Down Arrow** to minimize the top window on the
+Hold **Right Ctrl** and press **Down Arrow** to minimize the top window on the
 active monitor, so the one under it shows. Press again to minimize the next one.
-Press **Right Shift + Up Arrow** to bring them back one at a time, the most
-recently minimized first, each one on top of the last. While Right Shift is held, Up and Down
-Arrow are not passed on to other apps, so Right Shift + arrows won't select
-text (Left Shift still does).
+Press **Right Ctrl + Up Arrow** to bring them back one at a time, the most
+recently minimized first, each one on top of the last.
 
 Hold **Right Ctrl + Right Shift** and press **Up** or **Down Arrow** to move
 keyboard focus to the next or previous monitor (in left to right order,
@@ -190,15 +188,43 @@ static POINT GetWorkspaceOffset() {
 
 // ── active window ─────────────────────────────────────────────────────────────
 
+// Store (UWP) apps like WhatsApp draw into a CoreWindow that lives inside an
+// ApplicationFrameWindow. The frame is the window that can actually be moved
+// and minimized, so map the inner window to its frame.
+static BOOL CALLBACK FindFrameProc(HWND frame, LPARAM lParam) {
+    auto* pair = reinterpret_cast<HWND*>(lParam);  // [0] = core, [1] = result
+    wchar_t cls[64] = {};
+    GetClassNameW(frame, cls, ARRAYSIZE(cls));
+    if (wcscmp(cls, L"ApplicationFrameWindow") != 0) return TRUE;
+    if (FindWindowExW(frame, nullptr, L"Windows.UI.Core.CoreWindow", nullptr) ==
+        pair[0]) {
+        pair[1] = frame;
+        return FALSE;
+    }
+    return TRUE;
+}
+
 static HWND GetActiveTopLevelWindow() {
     HWND hwnd = GetForegroundWindow();
     if (!hwnd) return nullptr;
 
     hwnd = GetAncestor(hwnd, GA_ROOT);
-    if (!hwnd || !IsWindowVisible(hwnd) || IsIconic(hwnd)) return nullptr;
+    if (!hwnd) return nullptr;
+
+    {
+        wchar_t c[64] = {};
+        GetClassNameW(hwnd, c, ARRAYSIZE(c));
+        if (wcscmp(c, L"Windows.UI.Core.CoreWindow") == 0) {
+            HWND pair[2] = {hwnd, nullptr};
+            EnumWindows(FindFrameProc, reinterpret_cast<LPARAM>(pair));
+            if (pair[1]) hwnd = pair[1];
+        }
+    }
+    if (!IsWindowVisible(hwnd) || IsIconic(hwnd)) return nullptr;
 
     wchar_t cls[64] = {};
     GetClassNameW(hwnd, cls, ARRAYSIZE(cls));
+    Wh_Log(L"Active window class: %s", cls);
     if (wcscmp(cls, L"Progman") == 0 || wcscmp(cls, L"WorkerW") == 0 ||
         wcscmp(cls, L"Shell_TrayWnd") == 0 ||
         wcscmp(cls, L"Shell_SecondaryTrayWnd") == 0) {
@@ -691,21 +717,17 @@ static LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam,
                     !KeyDown(VK_RWIN);
                 // Right Ctrl           -> move the active window
                 // Right Ctrl + R.Shift -> move all windows on the monitor
-                // Right Shift alone + Down -> minimize the top window
-                // Right Shift alone + Up   -> bring one back
+                // Right Ctrl + Down -> minimize the top window
+                // Right Ctrl + Up   -> bring one back
                 const bool horizontal =
                     kb->vkCode == VK_LEFT || kb->vkCode == VK_RIGHT;
-                const bool rshiftOnly =
-                    KeyDown(VK_RSHIFT) && !KeyDown(VK_LSHIFT) &&
-                    !KeyDown(VK_CONTROL) && !KeyDown(VK_MENU) &&
-                    !KeyDown(VK_LWIN) && !KeyDown(VK_RWIN);
                 UINT msgId = 0;
                 if (horizontal && baseMods && !KeyDown(VK_SHIFT)) {
                     msgId = WM_APP_MOVE_WINDOW;
                 } else if (horizontal && baseMods && KeyDown(VK_RSHIFT) &&
                            !KeyDown(VK_LSHIFT)) {
                     msgId = WM_APP_MOVE_ALL;
-                } else if (!horizontal && rshiftOnly) {
+                } else if (!horizontal && baseMods && !KeyDown(VK_SHIFT)) {
                     msgId = kb->vkCode == VK_DOWN ? WM_APP_MINIMIZE_OTHERS
                                                   : WM_APP_RESTORE_MINIMIZED;
                 } else if (!horizontal && baseMods && KeyDown(VK_RSHIFT) &&
