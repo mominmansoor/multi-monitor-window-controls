@@ -2,7 +2,7 @@
 // @id              move-active-window-to-monitor
 // @name            Move Active Window to Monitor
 // @description     Keyboard shortcuts to move windows between monitors, switch focus between monitors (double tap Right Shift), and minimize the other windows on a monitor.
-// @version         1.6.0
+// @version         1.9.0
 // @author          Momin
 // @github          https://github.com/mominmansoor
 // @include         windhawk.exe
@@ -39,6 +39,7 @@ top window on that monitor gets focus. Monitors with no windows are skipped.
 You can also **double tap Right Shift** (tap and release it twice, quickly, with no
 other key in between) to jump focus to the next monitor. Using Right Shift as part
 of another shortcut or to type a capital letter, or holding it, doesn't count as a tap.
+Whenever focus switches, a short outline flashes around the monitor that got it (white by default, color is a setting).
 
 - Maximized (or borderless fullscreen) windows stay maximized/fullscreen on the
   new monitor.
@@ -56,6 +57,29 @@ Left Ctrl. It only reacts to the shortcuts above; while their modifier keys are 
 the matching arrow keys are not passed on to other programs.
 */
 // ==/WindhawkModReadme==
+
+// ==WindhawkModSettings==
+/*
+- outlineColor: white
+  $name: Focus outline color
+  $description: Color of the outline that flashes around the monitor that gets focus.
+  $options:
+  - white: White
+  - red: Red
+  - orange: Orange
+  - yellow: Yellow
+  - lime: Lime
+  - green: Green
+  - cyan: Cyan
+  - blue: Blue
+  - purple: Purple
+  - pink: Pink
+  - black: Black
+- outlineOpacity: 100
+  $name: Focus outline opacity (%)
+  $description: How solid the outline is, from 10 (faint) to 100 (fully solid).
+*/
+// ==/WindhawkModSettings==
 
 #ifndef NOMINMAX
 #define NOMINMAX
@@ -447,6 +471,120 @@ static void ActivateWindow(HWND hwnd) {
     }
 }
 
+// ── white outline flash on the monitor that got focus ────────────────────────
+
+static const wchar_t kFlashClass[] = L"WH_MoveActiveToMonitor_Flash";
+static bool g_flashClassRegistered = false;
+static int  g_flashTick = 0;
+static std::atomic<COLORREF> g_outlineColor{RGB(255, 255, 255)};
+// Background of the flash window; this exact color is made see-through.
+static std::atomic<int> g_outlineAlpha{255};
+static const COLORREF kFlashKey = RGB(1, 2, 3);
+
+static void LoadSettings() {
+    struct Named { const wchar_t* name; COLORREF color; };
+    static const Named table[] = {
+        {L"white",  RGB(255, 255, 255)}, {L"red",    RGB(255, 40, 40)},
+        {L"orange", RGB(255, 140, 0)},   {L"yellow", RGB(255, 230, 0)},
+        {L"lime",   RGB(160, 255, 0)},   {L"green",  RGB(0, 200, 70)},
+        {L"cyan",   RGB(0, 230, 255)},   {L"blue",   RGB(40, 100, 255)},
+        {L"purple", RGB(160, 70, 255)},  {L"pink",   RGB(255, 100, 190)},
+        {L"black",  RGB(0, 0, 0)},
+    };
+    COLORREF c = RGB(255, 255, 255);
+    PCWSTR v = Wh_GetStringSetting(L"outlineColor");
+    if (v) {
+        for (const auto& n : table) {
+            if (wcscmp(v, n.name) == 0) { c = n.color; break; }
+        }
+        Wh_FreeStringSetting(v);
+    }
+    g_outlineColor = c;
+
+    int pct = Wh_GetIntSetting(L"outlineOpacity");
+    if (pct < 10) pct = 10;
+    if (pct > 100) pct = 100;
+    g_outlineAlpha = 255 * pct / 100;
+}
+
+static LRESULT CALLBACK FlashWndProc(HWND hwnd, UINT msg, WPARAM wParam,
+                                     LPARAM lParam) {
+    switch (msg) {
+        case WM_PAINT: {
+            PAINTSTRUCT ps;
+            HDC dc = BeginPaint(hwnd, &ps);
+            RECT rc;
+            GetClientRect(hwnd, &rc);
+            // kFlashKey is see-through, the chosen color is the outline.
+            HBRUSH keyBrush = CreateSolidBrush(kFlashKey);
+            FillRect(dc, &rc, keyBrush);
+            DeleteObject(keyBrush);
+            HBRUSH white = CreateSolidBrush(g_outlineColor.load());
+            const int t = 3;
+            RECT top = {rc.left, rc.top, rc.right, rc.top + t};
+            RECT bot = {rc.left, rc.bottom - t, rc.right, rc.bottom};
+            RECT lef = {rc.left, rc.top, rc.left + t, rc.bottom};
+            RECT rig = {rc.right - t, rc.top, rc.right, rc.bottom};
+            FillRect(dc, &top, white);
+            FillRect(dc, &bot, white);
+            FillRect(dc, &lef, white);
+            FillRect(dc, &rig, white);
+            DeleteObject(white);
+            EndPaint(hwnd, &ps);
+            return 0;
+        }
+        case WM_ERASEBKGND:
+            return 1;
+        case WM_TIMER: {
+            // Hold for about 150 ms, then fade out over about 250 ms.
+            const int hold = 9, fade = 15;
+            g_flashTick++;
+            if (g_flashTick > hold + fade) {
+                KillTimer(hwnd, 1);
+                DestroyWindow(hwnd);
+                return 0;
+            }
+            if (g_flashTick > hold) {
+                int top = g_outlineAlpha.load();
+                BYTE a = (BYTE)(top - top * (g_flashTick - hold) / fade);
+                SetLayeredWindowAttributes(hwnd, kFlashKey, a, LWA_COLORKEY | LWA_ALPHA);
+            }
+            return 0;
+        }
+    }
+    return DefWindowProc(hwnd, msg, wParam, lParam);
+}
+
+static void FlashMonitorOutline(const RECT& rc) {
+    if (!g_flashClassRegistered) {
+        WNDCLASSEX wc = {};
+        wc.cbSize        = sizeof(wc);
+        wc.lpfnWndProc   = FlashWndProc;
+        wc.hInstance     = GetModuleHandle(nullptr);
+        wc.lpszClassName = kFlashClass;
+        if (!RegisterClassEx(&wc)) return;
+        g_flashClassRegistered = true;
+    }
+    // Only one flash at a time.
+    if (HWND old = FindWindowW(kFlashClass, nullptr)) DestroyWindow(old);
+
+    HWND w = CreateWindowEx(
+        WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST | WS_EX_TOOLWINDOW |
+            WS_EX_NOACTIVATE,
+        kFlashClass, nullptr, WS_POPUP, rc.left, rc.top, rc.right - rc.left,
+        rc.bottom - rc.top, nullptr, nullptr, GetModuleHandle(nullptr),
+        nullptr);
+    if (!w) return;
+    g_flashTick = 0;
+    SetLayeredWindowAttributes(w, kFlashKey, (BYTE)g_outlineAlpha.load(),
+                               LWA_COLORKEY | LWA_ALPHA);
+    ShowWindow(w, SW_SHOWNOACTIVATE);
+    SetWindowPos(w, HWND_TOPMOST, 0, 0, 0, 0,
+                 SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+    UpdateWindow(w);
+    SetTimer(w, 1, 16, nullptr);
+}
+
 static void FocusAdjacentMonitor(int direction /* +1 next, -1 previous */) {
     auto monitors = GetAllMonitors();
     const int n = (int)monitors.size();
@@ -475,6 +613,7 @@ static void FocusAdjacentMonitor(int direction /* +1 next, -1 previous */) {
         // EnumWindows lists top to bottom, so the first one is the top window.
         Wh_Log(L"Focusing monitor %d", idx);
         ActivateWindow(ctx.windows.front());
+        FlashMonitorOutline(monitors[idx].rcMon);
         return;
     }
     Wh_Log(L"No other monitor has a window to focus");
@@ -675,6 +814,11 @@ static void HookThreadProc() {
     DestroyWindow(hwnd);
     g_hMsgWnd = nullptr;
     UnregisterClass(CLASS_NAME, GetModuleHandle(nullptr));
+    if (g_flashClassRegistered) {
+        if (HWND old = FindWindowW(kFlashClass, nullptr)) DestroyWindow(old);
+        UnregisterClass(kFlashClass, GetModuleHandle(nullptr));
+        g_flashClassRegistered = false;
+    }
 }
 
 static DWORD WINAPI HookThreadEntry(LPVOID) {
@@ -686,13 +830,14 @@ static DWORD WINAPI HookThreadEntry(LPVOID) {
 
 BOOL WhTool_ModInit() {
     Wh_Log(L"Move Active Window to Monitor: Init");
+    LoadSettings();
     g_running = true;
     g_hThread = CreateThread(nullptr, 0, HookThreadEntry, nullptr, 0, &g_threadId);
     return g_hThread != nullptr;
 }
 
 void WhTool_ModSettingsChanged() {
-    // No settings.
+    LoadSettings();
 }
 
 void WhTool_ModUninit() {
