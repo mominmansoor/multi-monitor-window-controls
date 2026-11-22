@@ -2,7 +2,7 @@
 // @id              move-active-window-to-monitor
 // @name            Move Active Window to Monitor
 // @description     Keyboard shortcuts to move windows between monitors, switch focus between monitors (double tap Right Shift), and minimize the other windows on a monitor.
-// @version         1.9.0
+// @version         1.10.0
 // @author          Momin
 // @github          https://github.com/mominmansoor
 // @include         windhawk.exe
@@ -78,6 +78,9 @@ the matching arrow keys are not passed on to other programs.
 - outlineOpacity: 100
   $name: Focus outline opacity (%)
   $description: How solid the outline is, from 10 (faint) to 100 (fully solid).
+- outlineWidth: 3
+  $name: Focus outline width (pixels)
+  $description: Thickness of the outline. Recommended 1 to 5.
 */
 // ==/WindhawkModSettings==
 
@@ -479,6 +482,7 @@ static int  g_flashTick = 0;
 static std::atomic<COLORREF> g_outlineColor{RGB(255, 255, 255)};
 // Background of the flash window; this exact color is made see-through.
 static std::atomic<int> g_outlineAlpha{255};
+static std::atomic<int> g_outlineWidth{3};
 static const COLORREF kFlashKey = RGB(1, 2, 3);
 
 static void LoadSettings() {
@@ -505,6 +509,11 @@ static void LoadSettings() {
     if (pct < 10) pct = 10;
     if (pct > 100) pct = 100;
     g_outlineAlpha = 255 * pct / 100;
+
+    int w = Wh_GetIntSetting(L"outlineWidth");
+    if (w < 1) w = 1;
+    if (w > 20) w = 20;
+    g_outlineWidth = w;
 }
 
 static LRESULT CALLBACK FlashWndProc(HWND hwnd, UINT msg, WPARAM wParam,
@@ -520,7 +529,7 @@ static LRESULT CALLBACK FlashWndProc(HWND hwnd, UINT msg, WPARAM wParam,
             FillRect(dc, &rc, keyBrush);
             DeleteObject(keyBrush);
             HBRUSH white = CreateSolidBrush(g_outlineColor.load());
-            const int t = 3;
+            const int t = g_outlineWidth.load();
             RECT top = {rc.left, rc.top, rc.right, rc.top + t};
             RECT bot = {rc.left, rc.bottom - t, rc.right, rc.bottom};
             RECT lef = {rc.left, rc.top, rc.left + t, rc.bottom};

@@ -8,7 +8,7 @@ A Windhawk mod I made because I run one normal monitor and one vertical one, and
 * **Right Ctrl + Right Shift + Left or Right Arrow** sends every window on your current monitor over to the next one.
 * **Right Shift + Down Arrow** minimizes the top window so the one under it shows. Press it again to minimize the next one.
 * **Right Shift + Up Arrow** brings minimized windows back one per press, the most recent first, each on top of the last.
-* **Double tap Right Shift** moves keyboard focus to the other monitor, so you don't have to click over. A short outline flashes around the monitor that got focus. It is white by default, and you can pick another color (red, orange, yellow, lime, green, cyan, blue, purple, pink or black) in the mod settings, along with how see-through it is.
+* **Double tap Right Shift** moves keyboard focus to the other monitor, so you don't have to click over. A short outline flashes around the monitor that got focus. It is white by default, and you can pick another color (red, orange, yellow, lime, green, cyan, blue, purple, pink or black) in the mod settings, along with how see-through it is and how thick (1 to 5 pixels is the sweet spot).
 
 Maximized windows stay maximized on the new monitor. Everything else keeps its size, gets centered, and shrinks to fit if the new screen is smaller (which matters a lot when you hop onto a vertical monitor).
 
