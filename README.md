@@ -10,14 +10,15 @@ These are the defaults. Every shortcut can be changed or turned off in the mod s
 |---|---|
 | Right Ctrl + Down | Minimizes the top window so the one under it shows. Press again for the next one. |
 | Right Ctrl + Up | Brings back the last window you minimized this way, on top. One per press. |
-| Double tap Right Shift | Moves keyboard focus to the next monitor, so you don't have to click over. |
-| Right Ctrl + Right Shift + Up / Down | Moves focus to the next / previous monitor. |
+| Double tap Right Shift | Moves focus to the next window you can see, left to right across your monitors, so you don't have to click over. Snapped windows each get a turn, and a monitor with nothing open gets a turn too. |
+| Right Ctrl + Right Shift + Up / Down | Moves focus to the next / previous window you can see. |
 | Right Ctrl + Left / Right | Sends the window you're working in to the monitor on that side. |
 | Right Ctrl + Right Shift + Left / Right | Sends every window on your current monitor to the one on that side. |
 | Right Ctrl + Right Shift + Space | Swaps all the windows between your two monitors. |
 | Right Ctrl + Right Shift + Backspace | Undoes the last move, swap or layout restore, putting windows back exactly where they were (snapped ones too). Remembers 10 steps. |
 | Right Ctrl + Right Shift + K | Saves the layout of every window on every monitor. |
 | Right Ctrl + Right Shift + L | Puts everything back where the saved layout has it. |
+| Right Ctrl + Right Shift + Enter | Maximizes the focused window. Press again to put it back, into its snapped spot too. |
 
 When focus switches, a short outline flashes around the window that got it, so you can see where you landed. It can also flash when you move or restore a window. You can make it wrap the whole monitor instead, change its color, opacity and width, or turn it off.
 
@@ -27,7 +28,7 @@ Maximized windows stay maximized on the new monitor. A single moved window keeps
 
 ## Settings
 
-* **Each shortcut**: pick the key (a letter, digit, arrow, F1 to F24 and so on) and up to two modifiers (Ctrl, Shift or Alt, left, right or either side). Leave the key empty to turn a shortcut off. Handy if your laptop has no Right Ctrl.
+* **Each shortcut**: has its own section with what it does and its default keys. Switch it off if you don't want it, or pick a different key (a letter, digit, arrow, F1 to F24 and so on) and up to two modifiers (Ctrl, Shift or Alt, left, right or either side). Handy if your laptop has no Right Ctrl.
 * **Double tap key**: Right or Left Shift, Ctrl or Alt, or off. Turn it off if an app you use has its own double tap, like double Shift in JetBrains IDEs.
 * **Focus outline**: on or off, whether it also flashes on moves and restores, window or whole monitor, color, opacity and width. The width scales up on high DPI screens.
 * **Mouse follows focus**: off, or move the cursor to the center of the monitor or window that got focus.

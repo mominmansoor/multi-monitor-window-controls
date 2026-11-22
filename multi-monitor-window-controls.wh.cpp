@@ -2,7 +2,7 @@
 // @id              multi-monitor-window-controls
 // @name            Multi-Monitor Window Controls
 // @description     Keyboard shortcuts to minimize and restore windows one at a time, jump focus between monitors with an outline flash, swap or move windows between monitors, undo moves, and save and restore window layouts
-// @version         2.1.0
+// @version         2.2.1
 // @author          Momin
 // @github          https://github.com/mominmansoor
 // @include         windhawk.exe
@@ -15,7 +15,7 @@
 # Multi-Monitor Window Controls
 
 Keyboard control over windows on a multi-monitor setup. Every shortcut can be
-changed or turned off in the mod settings.
+turned off or changed to other keys in the mod settings.
 
 ## Default shortcuts
 
@@ -23,14 +23,15 @@ changed or turned off in the mod settings.
 |---|---|
 | Right Ctrl + Down | Minimize the top window on the active monitor, so the one under it shows. Press again for the next one. |
 | Right Ctrl + Up | Bring back the last window minimized this way, on top. One per press. |
-| Double tap Right Shift | Switch keyboard focus to the next monitor. |
-| Right Ctrl + Right Shift + Up / Down | Switch keyboard focus to the next / previous monitor. |
+| Double tap Right Shift | Move focus to the next window you can see, left to right across your monitors. |
+| Right Ctrl + Right Shift + Up / Down | Move focus to the next / previous window you can see. |
 | Right Ctrl + Left / Right | Move the active window to the monitor on that side. |
 | Right Ctrl + Right Shift + Left / Right | Move all windows on the active monitor to the monitor on that side. |
 | Right Ctrl + Right Shift + Space | Swap all windows between the active monitor and its neighbour. |
 | Right Ctrl + Right Shift + Backspace | Undo the last move, swap or layout restore. Up to 10 steps. |
 | Right Ctrl + Right Shift + K | Save the layout of all windows on all monitors. |
 | Right Ctrl + Right Shift + L | Restore the saved layout. |
+| Right Ctrl + Right Shift + Enter | Maximize the focused window, or put it back (into its snapped spot too). |
 
 When focus switches, a short outline flashes around the window that got it
 (or the whole monitor, if you prefer). It can also flash when a window is
@@ -42,8 +43,11 @@ settings. The mouse cursor can optionally follow focus too.
 - **Minimize and restore** work like a stack: the windows come back in the
   reverse order they were minimized. Windows closed or restored by hand in the
   meantime are skipped.
-- **Focus switching** gives focus to the top window on the next monitor (left
-  to right, wrapping around). Monitors with no windows are skipped. A double
+- **Focus switching** steps through every window you can see, left to right
+  across your monitors and wrapping around. Windows snapped side by side each
+  get a turn; windows hidden behind others are skipped. A monitor with nothing
+  open is a stop too: the desktop gets focus and the whole monitor is
+  outlined. A double
   tap only counts if the key is tapped twice quickly with nothing else pressed
   in between, so typing capital letters doesn't trigger it.
 - **Moving a window**: maximized and borderless fullscreen windows stay that
@@ -92,145 +96,15 @@ to sultansaad-dev.
 
 // ==WindhawkModSettings==
 /*
-- moveWindowLeft:
-  - key: Left
-    $name: Key
-    $description: >-
-      A letter, a digit, Left, Right, Up, Down, PageUp, PageDown, Home, End,
-      Insert, Delete, Space, Tab, Enter, Backspace, Escape, F1 to F24 or
-      Numpad0 to Numpad9. Leave empty to turn this shortcut off.
-  - modifier: rctrl
-    $name: Modifier
-    $options:
-    - rctrl: Right Ctrl
-    - lctrl: Left Ctrl
-    - ctrl: Ctrl (either side)
-    - ralt: Right Alt
-    - lalt: Left Alt
-    - alt: Alt (either side)
-    - rshift: Right Shift
-    - lshift: Left Shift
-    - shift: Shift (either side)
-  - extraModifier: none
-    $name: Second modifier
-    $options:
-    - none: None
-    - rctrl: Right Ctrl
-    - lctrl: Left Ctrl
-    - ctrl: Ctrl (either side)
-    - ralt: Right Alt
-    - lalt: Left Alt
-    - alt: Alt (either side)
-    - rshift: Right Shift
-    - lshift: Left Shift
-    - shift: Shift (either side)
-  $name: Move window to the monitor on the left
-- moveWindowRight:
-  - key: Right
-    $name: Key
-    $description: >-
-      A letter, a digit, Left, Right, Up, Down, PageUp, PageDown, Home, End,
-      Insert, Delete, Space, Tab, Enter, Backspace, Escape, F1 to F24 or
-      Numpad0 to Numpad9. Leave empty to turn this shortcut off.
-  - modifier: rctrl
-    $name: Modifier
-    $options:
-    - rctrl: Right Ctrl
-    - lctrl: Left Ctrl
-    - ctrl: Ctrl (either side)
-    - ralt: Right Alt
-    - lalt: Left Alt
-    - alt: Alt (either side)
-    - rshift: Right Shift
-    - lshift: Left Shift
-    - shift: Shift (either side)
-  - extraModifier: none
-    $name: Second modifier
-    $options:
-    - none: None
-    - rctrl: Right Ctrl
-    - lctrl: Left Ctrl
-    - ctrl: Ctrl (either side)
-    - ralt: Right Alt
-    - lalt: Left Alt
-    - alt: Alt (either side)
-    - rshift: Right Shift
-    - lshift: Left Shift
-    - shift: Shift (either side)
-  $name: Move window to the monitor on the right
-- moveAllLeft:
-  - key: Left
-    $name: Key
-    $description: >-
-      A letter, a digit, Left, Right, Up, Down, PageUp, PageDown, Home, End,
-      Insert, Delete, Space, Tab, Enter, Backspace, Escape, F1 to F24 or
-      Numpad0 to Numpad9. Leave empty to turn this shortcut off.
-  - modifier: rctrl
-    $name: Modifier
-    $options:
-    - rctrl: Right Ctrl
-    - lctrl: Left Ctrl
-    - ctrl: Ctrl (either side)
-    - ralt: Right Alt
-    - lalt: Left Alt
-    - alt: Alt (either side)
-    - rshift: Right Shift
-    - lshift: Left Shift
-    - shift: Shift (either side)
-  - extraModifier: rshift
-    $name: Second modifier
-    $options:
-    - none: None
-    - rctrl: Right Ctrl
-    - lctrl: Left Ctrl
-    - ctrl: Ctrl (either side)
-    - ralt: Right Alt
-    - lalt: Left Alt
-    - alt: Alt (either side)
-    - rshift: Right Shift
-    - lshift: Left Shift
-    - shift: Shift (either side)
-  $name: Move all windows to the monitor on the left
-- moveAllRight:
-  - key: Right
-    $name: Key
-    $description: >-
-      A letter, a digit, Left, Right, Up, Down, PageUp, PageDown, Home, End,
-      Insert, Delete, Space, Tab, Enter, Backspace, Escape, F1 to F24 or
-      Numpad0 to Numpad9. Leave empty to turn this shortcut off.
-  - modifier: rctrl
-    $name: Modifier
-    $options:
-    - rctrl: Right Ctrl
-    - lctrl: Left Ctrl
-    - ctrl: Ctrl (either side)
-    - ralt: Right Alt
-    - lalt: Left Alt
-    - alt: Alt (either side)
-    - rshift: Right Shift
-    - lshift: Left Shift
-    - shift: Shift (either side)
-  - extraModifier: rshift
-    $name: Second modifier
-    $options:
-    - none: None
-    - rctrl: Right Ctrl
-    - lctrl: Left Ctrl
-    - ctrl: Ctrl (either side)
-    - ralt: Right Alt
-    - lalt: Left Alt
-    - alt: Alt (either side)
-    - rshift: Right Shift
-    - lshift: Left Shift
-    - shift: Shift (either side)
-  $name: Move all windows to the monitor on the right
 - minimizeTop:
+  - enabled: true
+    $name: Enabled
   - key: Down
     $name: Key
     $description: >-
       A letter, a digit, Left, Right, Up, Down, PageUp, PageDown, Home, End,
       Insert, Delete, Space, Tab, Enter, Backspace, Escape, F1 to F24 or
-      Numpad0 to Numpad9. Leave empty to turn this shortcut off.
+      Numpad0 to Numpad9.
   - modifier: rctrl
     $name: Modifier
     $options:
@@ -257,13 +131,18 @@ to sultansaad-dev.
     - lshift: Left Shift
     - shift: Shift (either side)
   $name: Minimize the top window
+  $description: >-
+    Default: Right Ctrl + Down. Minimizes the window on top so the one under
+    it shows. Press again to minimize the next one.
 - restoreMinimized:
+  - enabled: true
+    $name: Enabled
   - key: Up
     $name: Key
     $description: >-
       A letter, a digit, Left, Right, Up, Down, PageUp, PageDown, Home, End,
       Insert, Delete, Space, Tab, Enter, Backspace, Escape, F1 to F24 or
-      Numpad0 to Numpad9. Leave empty to turn this shortcut off.
+      Numpad0 to Numpad9.
   - modifier: rctrl
     $name: Modifier
     $options:
@@ -290,13 +169,18 @@ to sultansaad-dev.
     - lshift: Left Shift
     - shift: Shift (either side)
   $name: Restore the last minimized window
+  $description: >-
+    Default: Right Ctrl + Up. Brings back the windows minimized with the
+    shortcut above, one per press, most recent first.
 - focusNext:
+  - enabled: true
+    $name: Enabled
   - key: Up
     $name: Key
     $description: >-
       A letter, a digit, Left, Right, Up, Down, PageUp, PageDown, Home, End,
       Insert, Delete, Space, Tab, Enter, Backspace, Escape, F1 to F24 or
-      Numpad0 to Numpad9. Leave empty to turn this shortcut off.
+      Numpad0 to Numpad9.
   - modifier: rctrl
     $name: Modifier
     $options:
@@ -322,14 +206,19 @@ to sultansaad-dev.
     - rshift: Right Shift
     - lshift: Left Shift
     - shift: Shift (either side)
-  $name: Switch focus to the next monitor
+  $name: Focus the next window
+  $description: >-
+    Default: Right Ctrl + Right Shift + Up. Moves focus to the next window you
+    can see, left to right across your monitors.
 - focusPrevious:
+  - enabled: true
+    $name: Enabled
   - key: Down
     $name: Key
     $description: >-
       A letter, a digit, Left, Right, Up, Down, PageUp, PageDown, Home, End,
       Insert, Delete, Space, Tab, Enter, Backspace, Escape, F1 to F24 or
-      Numpad0 to Numpad9. Leave empty to turn this shortcut off.
+      Numpad0 to Numpad9.
   - modifier: rctrl
     $name: Modifier
     $options:
@@ -355,14 +244,209 @@ to sultansaad-dev.
     - rshift: Right Shift
     - lshift: Left Shift
     - shift: Shift (either side)
-  $name: Switch focus to the previous monitor
+  $name: Focus the previous window
+  $description: >-
+    Default: Right Ctrl + Right Shift + Down. Same as above, in the other
+    direction.
+- toggleMaximize:
+  - enabled: true
+    $name: Enabled
+  - key: Enter
+    $name: Key
+    $description: >-
+      A letter, a digit, Left, Right, Up, Down, PageUp, PageDown, Home, End,
+      Insert, Delete, Space, Tab, Enter, Backspace, Escape, F1 to F24 or
+      Numpad0 to Numpad9.
+  - modifier: rctrl
+    $name: Modifier
+    $options:
+    - rctrl: Right Ctrl
+    - lctrl: Left Ctrl
+    - ctrl: Ctrl (either side)
+    - ralt: Right Alt
+    - lalt: Left Alt
+    - alt: Alt (either side)
+    - rshift: Right Shift
+    - lshift: Left Shift
+    - shift: Shift (either side)
+  - extraModifier: rshift
+    $name: Second modifier
+    $options:
+    - none: None
+    - rctrl: Right Ctrl
+    - lctrl: Left Ctrl
+    - ctrl: Ctrl (either side)
+    - ralt: Right Alt
+    - lalt: Left Alt
+    - alt: Alt (either side)
+    - rshift: Right Shift
+    - lshift: Left Shift
+    - shift: Shift (either side)
+  $name: Maximize or restore the focused window
+  $description: >-
+    Default: Right Ctrl + Right Shift + Enter. Maximizes the focused window.
+    Press again to put it back, into its snapped spot too.
+- moveWindowLeft:
+  - enabled: true
+    $name: Enabled
+  - key: Left
+    $name: Key
+    $description: >-
+      A letter, a digit, Left, Right, Up, Down, PageUp, PageDown, Home, End,
+      Insert, Delete, Space, Tab, Enter, Backspace, Escape, F1 to F24 or
+      Numpad0 to Numpad9.
+  - modifier: rctrl
+    $name: Modifier
+    $options:
+    - rctrl: Right Ctrl
+    - lctrl: Left Ctrl
+    - ctrl: Ctrl (either side)
+    - ralt: Right Alt
+    - lalt: Left Alt
+    - alt: Alt (either side)
+    - rshift: Right Shift
+    - lshift: Left Shift
+    - shift: Shift (either side)
+  - extraModifier: none
+    $name: Second modifier
+    $options:
+    - none: None
+    - rctrl: Right Ctrl
+    - lctrl: Left Ctrl
+    - ctrl: Ctrl (either side)
+    - ralt: Right Alt
+    - lalt: Left Alt
+    - alt: Alt (either side)
+    - rshift: Right Shift
+    - lshift: Left Shift
+    - shift: Shift (either side)
+  $name: Move the window to the left monitor
+  $description: >-
+    Default: Right Ctrl + Left. Sends the focused window to the monitor on the
+    left.
+- moveWindowRight:
+  - enabled: true
+    $name: Enabled
+  - key: Right
+    $name: Key
+    $description: >-
+      A letter, a digit, Left, Right, Up, Down, PageUp, PageDown, Home, End,
+      Insert, Delete, Space, Tab, Enter, Backspace, Escape, F1 to F24 or
+      Numpad0 to Numpad9.
+  - modifier: rctrl
+    $name: Modifier
+    $options:
+    - rctrl: Right Ctrl
+    - lctrl: Left Ctrl
+    - ctrl: Ctrl (either side)
+    - ralt: Right Alt
+    - lalt: Left Alt
+    - alt: Alt (either side)
+    - rshift: Right Shift
+    - lshift: Left Shift
+    - shift: Shift (either side)
+  - extraModifier: none
+    $name: Second modifier
+    $options:
+    - none: None
+    - rctrl: Right Ctrl
+    - lctrl: Left Ctrl
+    - ctrl: Ctrl (either side)
+    - ralt: Right Alt
+    - lalt: Left Alt
+    - alt: Alt (either side)
+    - rshift: Right Shift
+    - lshift: Left Shift
+    - shift: Shift (either side)
+  $name: Move the window to the right monitor
+  $description: >-
+    Default: Right Ctrl + Right. Sends the focused window to the monitor on
+    the right.
+- moveAllLeft:
+  - enabled: true
+    $name: Enabled
+  - key: Left
+    $name: Key
+    $description: >-
+      A letter, a digit, Left, Right, Up, Down, PageUp, PageDown, Home, End,
+      Insert, Delete, Space, Tab, Enter, Backspace, Escape, F1 to F24 or
+      Numpad0 to Numpad9.
+  - modifier: rctrl
+    $name: Modifier
+    $options:
+    - rctrl: Right Ctrl
+    - lctrl: Left Ctrl
+    - ctrl: Ctrl (either side)
+    - ralt: Right Alt
+    - lalt: Left Alt
+    - alt: Alt (either side)
+    - rshift: Right Shift
+    - lshift: Left Shift
+    - shift: Shift (either side)
+  - extraModifier: rshift
+    $name: Second modifier
+    $options:
+    - none: None
+    - rctrl: Right Ctrl
+    - lctrl: Left Ctrl
+    - ctrl: Ctrl (either side)
+    - ralt: Right Alt
+    - lalt: Left Alt
+    - alt: Alt (either side)
+    - rshift: Right Shift
+    - lshift: Left Shift
+    - shift: Shift (either side)
+  $name: Move all windows to the left monitor
+  $description: >-
+    Default: Right Ctrl + Right Shift + Left. Sends every window on the
+    current monitor to the monitor on the left.
+- moveAllRight:
+  - enabled: true
+    $name: Enabled
+  - key: Right
+    $name: Key
+    $description: >-
+      A letter, a digit, Left, Right, Up, Down, PageUp, PageDown, Home, End,
+      Insert, Delete, Space, Tab, Enter, Backspace, Escape, F1 to F24 or
+      Numpad0 to Numpad9.
+  - modifier: rctrl
+    $name: Modifier
+    $options:
+    - rctrl: Right Ctrl
+    - lctrl: Left Ctrl
+    - ctrl: Ctrl (either side)
+    - ralt: Right Alt
+    - lalt: Left Alt
+    - alt: Alt (either side)
+    - rshift: Right Shift
+    - lshift: Left Shift
+    - shift: Shift (either side)
+  - extraModifier: rshift
+    $name: Second modifier
+    $options:
+    - none: None
+    - rctrl: Right Ctrl
+    - lctrl: Left Ctrl
+    - ctrl: Ctrl (either side)
+    - ralt: Right Alt
+    - lalt: Left Alt
+    - alt: Alt (either side)
+    - rshift: Right Shift
+    - lshift: Left Shift
+    - shift: Shift (either side)
+  $name: Move all windows to the right monitor
+  $description: >-
+    Default: Right Ctrl + Right Shift + Right. Sends every window on the
+    current monitor to the monitor on the right.
 - swapMonitors:
+  - enabled: true
+    $name: Enabled
   - key: Space
     $name: Key
     $description: >-
       A letter, a digit, Left, Right, Up, Down, PageUp, PageDown, Home, End,
       Insert, Delete, Space, Tab, Enter, Backspace, Escape, F1 to F24 or
-      Numpad0 to Numpad9. Leave empty to turn this shortcut off.
+      Numpad0 to Numpad9.
   - modifier: rctrl
     $name: Modifier
     $options:
@@ -388,14 +472,19 @@ to sultansaad-dev.
     - rshift: Right Shift
     - lshift: Left Shift
     - shift: Shift (either side)
-  $name: Swap the windows of two monitors
+  $name: Swap monitors
+  $description: >-
+    Default: Right Ctrl + Right Shift + Space. Swaps all windows between the
+    current monitor and its neighbour.
 - undoMove:
+  - enabled: true
+    $name: Enabled
   - key: Backspace
     $name: Key
     $description: >-
       A letter, a digit, Left, Right, Up, Down, PageUp, PageDown, Home, End,
       Insert, Delete, Space, Tab, Enter, Backspace, Escape, F1 to F24 or
-      Numpad0 to Numpad9. Leave empty to turn this shortcut off.
+      Numpad0 to Numpad9.
   - modifier: rctrl
     $name: Modifier
     $options:
@@ -422,13 +511,18 @@ to sultansaad-dev.
     - lshift: Left Shift
     - shift: Shift (either side)
   $name: Undo the last move
+  $description: >-
+    Default: Right Ctrl + Right Shift + Backspace. Puts windows back where
+    they were before the last move, swap or layout restore. Up to 10 steps.
 - saveLayout:
+  - enabled: true
+    $name: Enabled
   - key: K
     $name: Key
     $description: >-
       A letter, a digit, Left, Right, Up, Down, PageUp, PageDown, Home, End,
       Insert, Delete, Space, Tab, Enter, Backspace, Escape, F1 to F24 or
-      Numpad0 to Numpad9. Leave empty to turn this shortcut off.
+      Numpad0 to Numpad9.
   - modifier: rctrl
     $name: Modifier
     $options:
@@ -455,13 +549,18 @@ to sultansaad-dev.
     - lshift: Left Shift
     - shift: Shift (either side)
   $name: Save the window layout
+  $description: >-
+    Default: Right Ctrl + Right Shift + K. Remembers where every window on
+    every monitor is. Kept after restarts.
 - restoreLayout:
+  - enabled: true
+    $name: Enabled
   - key: L
     $name: Key
     $description: >-
       A letter, a digit, Left, Right, Up, Down, PageUp, PageDown, Home, End,
       Insert, Delete, Space, Tab, Enter, Backspace, Escape, F1 to F24 or
-      Numpad0 to Numpad9. Leave empty to turn this shortcut off.
+      Numpad0 to Numpad9.
   - modifier: rctrl
     $name: Modifier
     $options:
@@ -488,10 +587,13 @@ to sultansaad-dev.
     - lshift: Left Shift
     - shift: Shift (either side)
   $name: Restore the saved window layout
+  $description: >-
+    Default: Right Ctrl + Right Shift + L. Puts windows back where the saved
+    layout has them.
 - doubleTapKey: rshift
   $name: Double tap to switch monitor focus
   $description: >-
-    Tap this key twice quickly to switch focus to the next monitor. Turn it
+    Tap this key twice quickly to move focus to the next visible window. Turn it
     off if an app you use has its own double tap, for example double Shift in
     JetBrains IDEs.
   $options:
@@ -586,6 +688,7 @@ enum Action {
     kUndoMove,
     kSaveLayout,
     kRestoreLayout,
+    kToggleMaximize,
     kActionCount,
 };
 
@@ -593,6 +696,7 @@ static const PCWSTR kActionSettingNames[kActionCount] = {
     L"moveWindowLeft", L"moveWindowRight",  L"moveAllLeft", L"moveAllRight",
     L"minimizeTop",    L"restoreMinimized", L"focusNext",   L"focusPrevious",
     L"swapMonitors",   L"undoMove",         L"saveLayout",  L"restoreLayout",
+    L"toggleMaximize",
 };
 
 // Which side(s) of a modifier family (Ctrl, Shift, Alt) must be held.
@@ -691,6 +795,7 @@ static void LoadSettings() {
     for (int i = 0; i < kActionCount; i++) {
         const PCWSTR id = kActionSettingNames[i];
         Shortcut& sc = s.shortcuts[i];
+        if (!Wh_GetIntSetting(L"%ls.enabled", id)) continue;
         sc.vk = ParseKey(StringSetting::make(L"%ls.key", id));
         AddModifier(sc, StringSetting::make(L"%ls.modifier", id));
         AddModifier(sc, StringSetting::make(L"%ls.extraModifier", id));
@@ -1505,25 +1610,149 @@ static void RestoreMinimizedWindow(HWND timerWnd) {
     }
 }
 
-// ── focus switching ───────────────────────────────────────────────────────────
+// ── maximize ──────────────────────────────────────────────────────────────────
 
-// direction: +1 next monitor, -1 previous (left to right, wrapping around).
-static void FocusMonitor(int direction) {
-    const int n = (int)g_monitors.size();
-    const int cur = FindMonitorIndex(GetSourceMonitor());
-    if (n < 2 || cur < 0) return;
-
-    // Skip monitors without windows.
-    for (int step = 1; step < n; step++) {
-        const int idx = ((cur + direction * step) % n + n) % n;
-        const auto windows = GetWindows(g_monitors[idx].hMon);
-        if (windows.empty()) continue;
-
-        Wh_Log(L"Focusing monitor %d", idx);
-        ActivateWindow(windows.front());
-        HighlightWindow(windows.front(), g_settings.outlineEnabled, true);
+// Maximizes the active window, or restores it if it's maximized. Windows
+// remembers a snapped window's spot, so it goes back there.
+static void ToggleMaximize(HWND timerWnd) {
+    HWND hwnd = GetActiveTopLevelWindow();
+    if (!hwnd) return;
+    if (!ShowWindowAsync(hwnd, IsZoomed(hwnd) ? SW_RESTORE : SW_MAXIMIZE)) {
+        Wh_Log(L"Could not maximize the window (running as administrator?)");
         return;
     }
+    HighlightWindowLater(timerWnd, hwnd, g_settings.outlineOnMove, false);
+}
+
+// ── focus switching ───────────────────────────────────────────────────────────
+
+// Windows you can actually see: at least 40% of the window is on a monitor
+// and not covered by windows above it. Side by side (snapped) windows each
+// count, a window hidden behind another doesn't. Sorted left to right by
+// monitor, then by position on the monitor.
+// A monitor with no visible windows is a stop too (hwnd is nullptr): focusing
+// it gives focus to the desktop and outlines the monitor.
+struct VisibleWindow {
+    HWND hwnd;
+    int monitor;
+    RECT rect;
+};
+
+static std::vector<VisibleWindow> GetVisibleWindows() {
+    const int kGrid = 5;  // sample points per side
+    std::vector<VisibleWindow> visible;
+    std::vector<RECT> above;
+    for (HWND hwnd : GetWindows(nullptr)) {  // top to bottom
+        const RECT rc = GetVisibleRect(hwnd);
+        const int w = rc.right - rc.left, h = rc.bottom - rc.top;
+        int seen = 0;
+        for (int gx = 0; gx < kGrid && w > 0 && h > 0; gx++) {
+            for (int gy = 0; gy < kGrid; gy++) {
+                const POINT pt = {rc.left + (2 * gx + 1) * w / (2 * kGrid),
+                                  rc.top + (2 * gy + 1) * h / (2 * kGrid)};
+                if (!MonitorFromPoint(pt, MONITOR_DEFAULTTONULL)) continue;
+                bool covered = false;
+                for (const RECT& r : above) {
+                    if (PtInRect(&r, pt)) {
+                        covered = true;
+                        break;
+                    }
+                }
+                if (!covered) seen++;
+            }
+        }
+        above.push_back(rc);
+        if (seen * 100 >= 40 * kGrid * kGrid) {
+            const int mon = FindMonitorIndex(
+                MonitorFromRect(&rc, MONITOR_DEFAULTTONEAREST));
+            visible.push_back({hwnd, mon, rc});
+        }
+    }
+    for (int i = 0; i < (int)g_monitors.size(); i++) {
+        if (std::none_of(visible.begin(), visible.end(),
+                         [i](const VisibleWindow& v) { return v.monitor == i; })) {
+            visible.push_back({nullptr, i, g_monitors[i].rcMon});
+        }
+    }
+    std::sort(visible.begin(), visible.end(),
+              [](const VisibleWindow& a, const VisibleWindow& b) {
+                  if (a.monitor != b.monitor) return a.monitor < b.monitor;
+                  if (a.rect.left != b.rect.left)
+                      return a.rect.left < b.rect.left;
+                  return a.rect.top < b.rect.top;
+              });
+    return visible;
+}
+
+// The empty monitor that was focused last, to know where the cycle is while
+// the desktop has focus.
+static HMONITOR g_focusedEmptyMonitor;
+
+// Moves focus to the next (+1) or previous (-1) visible window, left to right
+// across all monitors, wrapping around.
+static void FocusAdjacentWindow(int direction) {
+    const auto visible = GetVisibleWindows();
+    const int n = (int)visible.size();
+    if (n == 0) return;
+
+    const HWND active = GetActiveTopLevelWindow();
+    HWND foreground = GetForegroundWindow();
+    const bool desktopFocused =
+        !foreground || IsShellClass(GetAncestor(foreground, GA_ROOT));
+
+    int target = -1;
+    for (int i = 0; i < n; i++) {
+        const bool current =
+            visible[i].hwnd
+                ? visible[i].hwnd == active
+                : desktopFocused &&
+                      g_monitors[visible[i].monitor].hMon ==
+                          g_focusedEmptyMonitor;
+        if (current) {
+            target = ((i + direction) % n + n) % n;
+            break;
+        }
+    }
+
+    if (target < 0) {
+        // The active window isn't visible (or there's none): go to the first
+        // window on the next monitor in that direction.
+        const int cur = FindMonitorIndex(GetSourceMonitor());
+        if (direction > 0) {
+            target = 0;
+            for (int i = 0; i < n; i++) {
+                if (visible[i].monitor > cur) {
+                    target = i;
+                    break;
+                }
+            }
+        } else {
+            target = n - 1;
+            for (int i = n - 1; i >= 0; i--) {
+                if (visible[i].monitor < cur) {
+                    target = i;
+                    break;
+                }
+            }
+        }
+    }
+
+    const VisibleWindow& stop = visible[target];
+    if (!stop.hwnd) {
+        const MonitorInfo& mon = g_monitors[stop.monitor];
+        g_focusedEmptyMonitor = mon.hMon;
+        if (HWND desktop = GetShellWindow()) ActivateWindow(desktop);
+        if (g_settings.outlineEnabled) FlashMonitor(mon);
+        if (g_settings.mouseFollow) {
+            SetCursorPos((mon.rcWork.left + mon.rcWork.right) / 2,
+                         (mon.rcWork.top + mon.rcWork.bottom) / 2);
+        }
+        return;
+    }
+    if (stop.hwnd == active) return;
+    g_focusedEmptyMonitor = nullptr;
+    ActivateWindow(stop.hwnd);
+    HighlightWindow(stop.hwnd, g_settings.outlineEnabled, true);
 }
 
 // ── keyboard hook ─────────────────────────────────────────────────────────────
@@ -1615,7 +1844,7 @@ static bool ActionHasTarget(int action) {
             return HasRestorableWindow();
         case kFocusNext:
         case kFocusPrevious:
-            return g_monitors.size() >= 2;
+            return GetVisibleWindows().size() >= 2;
         case kSwapMonitors:
             return FindSwapPartner(FindMonitorIndex(GetSourceMonitor())) >= 0;
         case kUndoMove:
@@ -1624,6 +1853,8 @@ static bool ActionHasTarget(int action) {
             return true;
         case kRestoreLayout:
             return g_hasSavedLayout;
+        case kToggleMaximize:
+            return GetActiveTopLevelWindow() != nullptr;
     }
     return false;
 }
@@ -1668,9 +1899,7 @@ static void TrackDoubleTap(DWORD vk, bool down, bool up) {
         g_lastTapTime = 0;
     } else if (g_lastTapTime && now - g_lastTapTime <= kDoubleTapMs) {
         g_lastTapTime = 0;
-        if (g_monitors.size() >= 2) {
-            PostMessage(g_mainWindow, WM_APP_ACTION, kFocusNext, 0);
-        }
+        PostMessage(g_mainWindow, WM_APP_ACTION, kFocusNext, 0);
     } else {
         g_lastTapTime = now;
     }
@@ -1742,10 +1971,10 @@ static void RunAction(HWND hwnd, int action) {
             RestoreMinimizedWindow(hwnd);
             break;
         case kFocusNext:
-            FocusMonitor(1);
+            FocusAdjacentWindow(1);
             break;
         case kFocusPrevious:
-            FocusMonitor(-1);
+            FocusAdjacentWindow(-1);
             break;
         case kSwapMonitors:
             SwapMonitors(hwnd);
@@ -1758,6 +1987,9 @@ static void RunAction(HWND hwnd, int action) {
             break;
         case kRestoreLayout:
             RestoreLayout(hwnd);
+            break;
+        case kToggleMaximize:
+            ToggleMaximize(hwnd);
             break;
     }
 }
