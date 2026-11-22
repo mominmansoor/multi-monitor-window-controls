@@ -1,0 +1,31 @@
+# Move Active Window to Monitor
+
+A Windhawk mod I made because I run one normal monitor and one vertical one, and I got tired of dragging windows across by hand. Now it's a keyboard shortcut.
+
+## What it does
+
+* **Right Ctrl + Left or Right Arrow** sends the window you're working in to the monitor on that side.
+* **Right Ctrl + Right Shift + Left or Right Arrow** sends every window on your current monitor over to the next one.
+
+Maximized windows stay maximized on the new monitor. Everything else keeps its size, gets centered, and shrinks to fit if the new screen is smaller (which matters a lot when you hop onto a vertical monitor).
+
+The window stays focused after it moves, so you can keep tapping the shortcut to bounce it back and forth.
+
+## Install
+
+1. Install [Windhawk](https://windhawk.net/).
+2. In Windhawk, open the menu and pick **Create a new mod**.
+3. Delete the placeholder code and paste in `move-active-window-to-monitor.wh.cpp` from this repo.
+4. Hit **Compile**, then enable the mod.
+
+## Good to know
+
+* Monitors are ordered left to right the way they are in Windows display settings. If nothing sits on the side you pressed, nothing happens.
+* Windows blocks normal programs from controlling windows that run as administrator, so those won't move. Win + Shift + Arrow still works on them.
+* To tell Right Ctrl apart from Left Ctrl, the mod uses a low level keyboard hook. It only reacts to the shortcuts above, but while Right Ctrl is held, Left and Right Arrow don't reach other apps. The whole hook is one section of the code if you want to read it.
+* When moving all windows, it skips minimized ones, windows on other virtual desktops, tool windows, the desktop and the taskbar.
+* If a key press does nothing, open the mod's Log tab in Windhawk. It prints what it did for each press.
+
+## Credit
+
+Started from the Move Window to Monitor mod by TomberWolf and rebuilt around Right Ctrl, the active window, and moving everything at once. Released under the MIT license.
